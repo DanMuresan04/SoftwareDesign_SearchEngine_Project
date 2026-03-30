@@ -13,19 +13,23 @@ public class DatabaseManager {
     }
 
     public static void initializeSchema() {
-        String sql = "CREATE TABLE IF NOT EXISTS files (" +
+        String createSql = "CREATE TABLE IF NOT EXISTS files (" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "file_name TEXT NOT NULL, " +
                 "file_path TEXT NOT NULL UNIQUE, " +
                 "extension TEXT, " +
-                "last_modified INTEGER" +
+                "size_bytes INTEGER, " +
+                "creation_time INTEGER, " +
+                "last_modified INTEGER NOT NULL, " +
+                "last_accessed INTEGER, " +
+                "mime_type TEXT, " +
+                "owner TEXT" +
                 ");";
 
         try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
-            stmt.execute(sql);
-            System.out.println("Database initialized successfully.");
+            stmt.execute(createSql); 
         } catch (SQLException e) {
-            System.err.println("Database initialization failed: " + e.getMessage());
+            System.err.println("Failed to initialize database schema: " + e.getMessage());
         }
     }
 }
