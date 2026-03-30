@@ -17,8 +17,24 @@ public class SafeFileVisitor extends SimpleFileVisitor<Path> {
     }
 
     @Override
+    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+        String dirName = dir.getFileName().toString();
+
+        if (dirName.startsWith(".")) {
+            return FileVisitResult.SKIP_SUBTREE;
+        }
+
+        return FileVisitResult.CONTINUE;
+    }
+
+    @Override
     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-        fileHandler.handle(file);
+        String fileName = file.getFileName().toString();
+
+        if (!fileName.startsWith(".")) {
+            fileHandler.handle(file, attrs);
+        }
+
         return FileVisitResult.CONTINUE;
     }
 
