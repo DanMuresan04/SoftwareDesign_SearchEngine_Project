@@ -32,7 +32,7 @@ public class SafeFileVisitor extends SimpleFileVisitor<Path> {
         String fileName = file.getFileName().toString();
 
         if (!fileName.startsWith(".")) {
-            fileHandler.handle(file);
+            fileHandler.handle(file, attrs);
         }
 
         return FileVisitResult.CONTINUE;
