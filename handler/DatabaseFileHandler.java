@@ -80,7 +80,7 @@ public class DatabaseFileHandler implements FileHandler {
                 if (rsCheck.next()) {
                     long dbLastModified = rsCheck.getLong("last_modified");
                     if (dbLastModified == attrs.lastModifiedTime().toMillis()) {
-                        return; // SKIP EVERYTHING!
+                        return;
                     }
                 }
             }
