@@ -13,10 +13,8 @@ public class DatabaseManager {
     }
 
     public static void initializeSchema() {
-        // Nuke the old table so the new columns are guaranteed to be created
-        String dropSql = "DROP TABLE IF EXISTS files;";
 
-        String createSql = "CREATE TABLE IF NOT EXISTS files (" +
+        String createFiles = "CREATE TABLE IF NOT EXISTS files (" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "file_name TEXT NOT NULL, " +
                 "file_path TEXT NOT NULL UNIQUE, " +
@@ -29,9 +27,23 @@ public class DatabaseManager {
                 "owner TEXT" +
                 ");";
 
+        String createWords = "CREATE TABLE IF NOT EXISTS words (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "term TEXT NOT NULL UNIQUE" +
+                ");";
+
+        String createPostings = "CREATE TABLE IF NOT EXISTS postings (" +
+                "word_id INTEGER, " +
+                "file_id INTEGER, " +
+                "FOREIGN KEY(word_id) REFERENCES words(id), " +
+                "FOREIGN KEY(file_id) REFERENCES files(id), " +
+                "PRIMARY KEY(word_id, file_id)" +
+                ");";
+
         try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
-            stmt.execute(dropSql);   // Run the drop first
-            stmt.execute(createSql); // Then build the new schema
+            stmt.execute(createFiles);
+            stmt.execute(createWords);
+            stmt.execute(createPostings);
         } catch (SQLException e) {
             System.err.println("Failed to initialize database schema: " + e.getMessage());
         }

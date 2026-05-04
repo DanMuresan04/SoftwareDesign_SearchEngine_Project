@@ -39,7 +39,7 @@ public class SearchEngineCLI {
             }
 
             if (!input.isEmpty()) {
-                searcher.searchByName(input);
+                searcher.search(input);
             }
         }
 
