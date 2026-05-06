@@ -24,7 +24,8 @@ public class DatabaseManager {
                 "last_modified INTEGER NOT NULL, " +
                 "last_accessed INTEGER, " +
                 "mime_type TEXT, " +
-                "owner TEXT" +
+                "owner TEXT, " +
+                "rank_score REAL DEFAULT 0" +
                 ");";
 
         String createWords = "CREATE TABLE IF NOT EXISTS words (" +

@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 
 public class Searcher {
 
-    public String search(String query) {
+    public String search(String query, String sortStrategy) {
         StringBuilder sql = new StringBuilder("SELECT f.file_name, f.file_path, f.size_bytes, f.mime_type FROM files f ");
         List<Object> params = new ArrayList<>();
 
@@ -96,6 +96,21 @@ public class Searcher {
             params.add(contentKeywords.size());
         }
 
+        switch (sortStrategy) {
+            case "Date Modified":
+                sql.append(" ORDER BY f.last_modified DESC");
+                break;
+            case "Alphabetical":
+                sql.append(" ORDER BY f.file_name ASC");
+                break;
+            case "Size":
+                sql.append(" ORDER BY f.size_bytes DESC");
+                break;
+            default:
+                sql.append(" ORDER BY f.rank_score DESC");
+                break;
+        }
+
         sql.append(" LIMIT 50");
 
         StringBuilder resultsOutput = new StringBuilder();
@@ -109,34 +124,48 @@ public class Searcher {
 
             ResultSet rs = pstmt.executeQuery();
 
-            resultsOutput.append("<html><head><meta charset='UTF-8'></head>");
-            resultsOutput.append("<body style='font-family: Arial, sans-serif; padding: 15px; color: darkslategray;'>");
-            resultsOutput.append("<h2 style='margin-top: 0; color: blue;'>Search Results</h2>");
+            resultsOutput.append("<html><head><meta charset='UTF-8'>");
+            resultsOutput.append("<style>");
+            resultsOutput.append("body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8f9fa; color: #333; line-height: 1.6; padding: 20px; }");
+            resultsOutput.append(".result-card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 4px solid #4a90e2; transition: transform 0.2s, box-shadow 0.2s; }");
+            resultsOutput.append(".result-card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-left-color: #357abd; }");
+            resultsOutput.append(".file-name { font-size: 18px; font-weight: 600; color: #2c3e50; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; }");
+            resultsOutput.append(".file-size { font-size: 13px; color: #7f8c8d; font-weight: 400; }");
+            resultsOutput.append(".file-path { font-size: 13px; color: #27ae60; margin-bottom: 12px; word-break: break-all; }");
+            resultsOutput.append(".snippet { font-family: 'Consolas', 'Monaco', monospace; font-size: 13px; background-color: #f1f3f5; padding: 12px; border-radius: 4px; border: 1px solid #e9ecef; color: #495057; }");
+            resultsOutput.append(".highlight { color: #d63031; background-color: #ffead0; font-weight: bold; padding: 0 2px; border-radius: 2px; }");
+            resultsOutput.append("h2 { color: #2c3e50; margin-top: 0; font-weight: 300; border-bottom: 2px solid #e9ecef; padding-bottom: 10px; }");
+            resultsOutput.append("::-webkit-scrollbar { width: 8px; }");
+            resultsOutput.append("::-webkit-scrollbar-track { background: #f1f1f1; }");
+            resultsOutput.append("::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }");
+            resultsOutput.append("::-webkit-scrollbar-thumb:hover { background: #999; }");
+            resultsOutput.append("</style></head><body>");
+
+            resultsOutput.append("<h2>Search Results</h2>");
 
             boolean found = false;
 
             while (rs.next()) {
                 found = true;
-                long sizeKB = rs.getLong("size_bytes") / 1024;
+                long sizeBytes = rs.getLong("size_bytes");
+                String sizeStr = sizeBytes < 1024 ? sizeBytes + " B" : (sizeBytes / 1024) + " KB";
+                if (sizeBytes > 1024 * 1024) sizeStr = String.format("%.2f MB", sizeBytes / (1024.0 * 1024.0));
+                
                 String filePath = rs.getString("file_path");
                 String fileName = rs.getString("file_name");
 
-                resultsOutput.append("<div style='margin-bottom: 20px; padding: 10px; border: 1px solid lightgray; border-radius: 5px; background-color: lightsmoke;'>");
-                resultsOutput.append("<div style='font-size: 16px; font-weight: bold; color: #royalblue;'>");
-                resultsOutput.append(fileName);
-                resultsOutput.append(" <span style='font-size: 12px; color: gray; font-weight: normal;'>(").append(sizeKB).append(" KB)</span>");
+                resultsOutput.append("<div class='result-card'>");
+                resultsOutput.append("<div class='file-name'>");
+                resultsOutput.append("<span>").append(fileName).append("</span>");
+                resultsOutput.append("<span class='file-size'>").append(sizeStr).append("</span>");
                 resultsOutput.append("</div>");
 
-                resultsOutput.append("<div style='font-size: 12px; color: forestgreen; margin-bottom: 8px; word-wrap: break-word;'>");
-                resultsOutput.append(filePath);
-                resultsOutput.append("</div>");
+                resultsOutput.append("<div class='file-path'>").append(filePath).append("</div>");
 
                 if (!contentKeywords.isEmpty()) {
                     String snippet = extractSnippet(filePath, contentKeywords);
                     if (!snippet.isEmpty()) {
-                        resultsOutput.append("<div style='font-family: monospace; font-size: 13px; color: darkslategray; background-color: white; padding: 8px; border-left: 3px solid blue; overflow-wrap: break-word;'>");
-                        resultsOutput.append(snippet);
-                        resultsOutput.append("</div>");
+                        resultsOutput.append("<div class='snippet'>").append(snippet).append("</div>");
                     }
                 }
 
@@ -144,7 +173,7 @@ public class Searcher {
             }
 
             if (!found) {
-                resultsOutput.append("<i style='color: gray;'>No matching files found.</i>");
+                resultsOutput.append("<p style='text-align: center; color: #95a5a6; margin-top: 40px;'><i>No matching files found for your query.</i></p>");
             }
             resultsOutput.append("</body></html>");
 

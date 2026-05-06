@@ -31,14 +31,14 @@ public class SearchFX extends Application {
 
         HBox indexBar = new HBox(10);
         indexBar.setPadding(new Insets(10));
-        
+
         TextField indexField = new TextField();
         indexField.setPrefWidth(450);
         indexField.setPromptText("Enter directory absolute path...");
-        
+
         Button indexButton = new Button("Index");
         Label statusLabel = new Label("Ready");
-        
+
         indexButton.setOnAction(e -> {
             String dirPath = indexField.getText().trim();
             if (dirPath.isEmpty()) {
@@ -58,35 +58,40 @@ public class SearchFX extends Application {
             DatabaseFileHandler.finish();
             statusLabel.setText("Indexing complete!");
         });
-        
+
         indexBar.getChildren().addAll(indexField, indexButton, statusLabel);
 
         HBox topBar = new HBox(10);
         topBar.setPadding(new Insets(10));
 
         TextField searchField = new TextField();
-        searchField.setPrefWidth(500);
+        searchField.setPrefWidth(400);
         searchField.setPromptText("Try: ext:java public");
+
+        javafx.scene.control.ComboBox<String> sortBox = new javafx.scene.control.ComboBox<>();
+        sortBox.getItems().addAll("Relevance", "Date Modified", "Alphabetical", "Size");
+        sortBox.setValue("Relevance");
 
         Button searchButton = new Button("Search");
 
-        topBar.getChildren().addAll(searchField, searchButton);
+        topBar.getChildren().addAll(searchField, sortBox, searchButton);
 
         WebView webView = new WebView();
 
         searchButton.setOnAction(e -> {
             String query = searchField.getText();
+            String strategy = sortBox.getValue();
             if (!query.isBlank()) {
                 webView.getEngine().loadContent("<html><body><i>Searching...</i></body></html>");
 
-                String rawResults = searcher.search(query);
+                String rawResults = searcher.search(query, strategy);
 
                 String htmlFixed = "<html><head><meta charset='UTF-8'></head>" +
                         "<body style='font-family: sans-serif; padding: 10px;'>" +
                         "<pre style='font-family: monospace; white-space: pre-wrap; font-size: 14px;'>" +
                         rawResults +
                         "</pre></body></html>";
-    
+
                 webView.getEngine().loadContent(htmlFixed);
             }
         });

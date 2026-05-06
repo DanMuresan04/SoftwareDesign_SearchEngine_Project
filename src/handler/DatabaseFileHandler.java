@@ -32,14 +32,15 @@ public class DatabaseFileHandler implements FileHandler {
             conn = DatabaseManager.getConnection();
             conn.setAutoCommit(false);
 
-            String sqlFile = "INSERT INTO files(file_name, file_path, extension, size_bytes, creation_time, last_modified, last_accessed, mime_type, owner) " +
-                    "VALUES(?,?,?,?,?,?,?,?,?) " +
+            String sqlFile = "INSERT INTO files(file_name, file_path, extension, size_bytes, creation_time, last_modified, last_accessed, mime_type, owner, rank_score) " +
+                    "VALUES(?,?,?,?,?,?,?,?,?,?) " +
                     "ON CONFLICT(file_path) DO UPDATE SET " +
                     "size_bytes = excluded.size_bytes, " +
                     "last_modified = excluded.last_modified, " +
                     "last_accessed = excluded.last_accessed, " +
                     "mime_type = excluded.mime_type, " +
-                    "owner = excluded.owner " +
+                    "owner = excluded.owner, " +
+                    "rank_score = excluded.rank_score " +
                     "WHERE files.last_modified < excluded.last_modified;";
             pstmtFileUpsert = conn.prepareStatement(sqlFile);
 
@@ -85,6 +86,12 @@ public class DatabaseFileHandler implements FileHandler {
                 }
             }
 
+            int slashCount = 0;
+            for (char c : fullPath.toCharArray()) {
+                if (c == '/' || c == '\\') slashCount++;
+            }
+            double score = 100.0 - (slashCount * 2.0);
+
             pstmtFileUpsert.setString(1, fileName);
             pstmtFileUpsert.setString(2, fullPath);
             pstmtFileUpsert.setString(3, ext);
@@ -94,6 +101,7 @@ public class DatabaseFileHandler implements FileHandler {
             pstmtFileUpsert.setLong(7, attrs.lastAccessTime().toMillis());
             pstmtFileUpsert.setString(8, mimeType);
             pstmtFileUpsert.setString(9, owner);
+            pstmtFileUpsert.setDouble(10, score);
 
             pstmtFileUpsert.executeUpdate();
 
@@ -146,14 +154,14 @@ public class DatabaseFileHandler implements FileHandler {
             }
             conn.commit();
 
-            pstmtFileUpsert.close();
-            pstmtGetFileId.close();
-            pstmtClearPostings.close();
-            pstmtWordInsert.close();
-            pstmtGetWordId.close();
-            pstmtPostingInsert.close();
-            pstmtCheckModified.close();
-            conn.close();
+            if (pstmtFileUpsert != null) pstmtFileUpsert.close();
+            if (pstmtGetFileId != null) pstmtGetFileId.close();
+            if (pstmtClearPostings != null) pstmtClearPostings.close();
+            if (pstmtWordInsert != null) pstmtWordInsert.close();
+            if (pstmtGetWordId != null) pstmtGetWordId.close();
+            if (pstmtPostingInsert != null) pstmtPostingInsert.close();
+            if (pstmtCheckModified != null) pstmtCheckModified.close();
+            if (conn != null) conn.close();
             
             pstmtFileUpsert = null;
             pstmtGetFileId = null;
